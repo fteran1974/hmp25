@@ -1,0 +1,191 @@
+function[X,Y,E,s,sp,rberr,lberr,rberrl,lberrl]=scalfiedlereigconbis(coeff,v)
+% Polynomial eigenvalue problem with Fiedler pencils.
+%  s is the condition number for the linearization, and sp is the condition
+%  number for the polynomial. Same with berr/berrl and right backward
+%  errors, and with lberr/lberrl and left b'err
+%  This is expected to give more accurate condition numbers, than 
+%  scalfiedlereigcon because of the computation of left e-vecs.
+%  However, in the case of multiple e-vals, left and right e-vecs may not
+%  match!!
+%   a=[A0 A1 ... Ap] is a matrix with size nxn(p+1)
+%   [X,E] = fiedlereig((v1,...,v_{p-1}),A0,A1,..,Ap) solves 
+%   the polynomial eigenvalue problem of degree p:
+%      (A0 + lambda*A1 + ... + lambda^p*Ap)*x = 0.
+%   using the Fiedler pencil whose CISS is given by v
+%   The input is p+1 square matrices, A0, A1, ..., Ap, all of the same
+%   order, n, together with a vector v of length p-1 such that
+%   v(i)=1 if the bijection defining the Fiedler pencil has a consecution
+%   at i, and v(i)=0 if it has an inversion at i.
+%   The output is an n-by-n*p matrix, X, whose columns
+%   are the eigenvectors, and a vector of length n*p, E, whose
+%   elements are the eigenvalues.
+%      for j = 1:n*p
+%         lambda = E(j)
+%         x = X(:,j)
+%         (A0 + lambda*A1 + ... + lambda^p*Ap)*x is approximately 0.
+%      end
+%
+%   E = fiedlereig(A0,A1,..,Ap,v) is a vector of length n*p whose
+%   elements are the eigenvalues of the polynomial eigenvalue problem.
+%
+%   If both A0 and Ap are singular the problem is potentially ill-posed.
+%   Theoretically, the solutions might not exist or might not be unique.
+%   Computationally, the computed solutions may be inaccurate.
+%   If one, but not both, of A0 and Ap is singular, the problem is well
+%   posed, but some of the eigenvalues may be zero or "infinite".
+%
+%   [X,E,S] = fiedlereig(A0,A1,..,AP) also returns a P*N length vector S of
+%   condition numbers for the eigenvalues. At least one of A0 and AP must 
+%   be nonsingular. Large condition numbers imply that the problem is
+%   near one with multiple eigenvalues.
+%
+%   See also EIG, COND, CONDEIG.
+
+%   Nicholas J. Higham, Francoise Tisseur and Fernando De Terán
+%   $Revision: $  $Date: 2014/01/28$
+ 
+%   Build two n*p-by-n*p matrices which are the coefficients of the
+%   Fiedler pencil. This is based in Algorithm 1 in:
+%   [De Terán, Dopico, Mackey. LAA 437, 957-991]
+
+[n,r]= size(coeff);
+p = r/n-1;
+[A,B]=fiedler(coeff,v);
+nor=norm(coeff(:,1:n),'fro');%I'm using Frobenius norm for sparse matrices
+% for which the 2-norm is not available
+for i=2:p+1
+nor=[nor norm(coeff(:,n*(i-1)+1:n*i),'fro')] ;
+end
+d=max(nor);
+Dr=eye(n);
+for i=2:p
+if v(p-i+1)==0
+    Dr=blkdiag(Dr,eye(n));
+else Dr=blkdiag(Dr,d*eye(n));
+end
+end
+
+Dl=eye(n);
+for i=2:p
+if v(p-i+1)==0
+    Dl=blkdiag(Dl,d*eye(n));
+else Dl=blkdiag(Dl,eye(n));
+end
+end
+
+A=Dl*A*Dr;
+B=Dl*B*Dr;
+
+% Use the QZ algorithm on the big matrix pair (A,B).
+
+[Xf,E] = eig(B,A);
+E = diag(E);
+for i = 1:n*p, Xf(:,i) = Xf(:,i)/norm(Xf(:,i)); end % Normalize right eigenvectors.
+
+
+% Construct matrix Yf whose columns are left eigenvectors.
+[Yf,El] = eig(B.',A.');
+El = diag(El);
+
+for i = 1:n*p, Yf(:,i) = Yf(:,i)/norm(Yf(:,i)); end % Normalize left eigenvectors.
+
+%B*Xf-A*Xf*diag(E) must be small
+norm(B.'*Yf-A.'*Yf*diag(El));% must be small
+
+% Problem: Does not necessarily sort the left e-vecs according to the
+% sorting of the right e-vecs!!!!
+
+% Remove the infinite eigenvalues
+
+%y1=isfinite(E);
+%y2=isfinite(El);
+%E=E(y1);
+%El=El(y2);
+%w=length(E);
+%Xf=Xf(:,y1);
+%Yf=Yf(:,y2);
+
+[~,I1]=sort(abs(E));
+E=E(I1);
+[~,I2]=sort(abs(El));
+El=El(I2);
+Xf=Xf(:,I1);
+Yf=Yf(:,I2);
+
+if sum(v)>0
+[~,ind]=max(v);
+i0=min(ind);
+i0=i0-1;
+else
+i0=p-1;
+end
+
+if sum(v)<p-1
+[~,ind]=min(v);
+j0=min(ind);
+j0=j0-1;
+else
+j0=p-1;
+end
+
+
+X = Xf(n*(p-j0-1)+1:n*(p-j0),:);% X contains right e-vecs
+Y = Yf(n*(p-i0-1)+1:n*(p-i0),:); % Y contains the left e-vecs
+
+for i = 1:n*p, X(:,i) = X(:,i)/norm(X(:,i)); end 
+for i = 1:n*p, Y(:,i) = Y(:,i)/norm(Y(:,i)); end 
+
+% They may not match in case of multiple evals!
+    
+    % Reconstruct alpha-beta representation of eigenvalues: E(i) = a(i)/b(i).
+    a = E;
+    b = ones(size(a));
+    k = isinf(a); a(k) = 1; b(k) = 0;
+    al = El';
+    bl = ones(size(al));
+    kl = isinf(al); a(kl) = 1; b(kl) = 0;
+    
+    if p > 1
+    % Construct matrix Yf whose rows are conjugates of left eigenvectors of
+    % the Fiedler pencil
+     nu = zeros(p+1,1);
+    for i = 1:p+1, nu(i) = norm(coeff(:,n*(i-1)+1:n*i),'fro'); end
+    %s = zeros(n*p,1);  
+    % Compute condition numbers.
+    for j = 1:p*n
+        ab = (a(j).^(0:p-1)).*(b(j).^(p-1:-1:0));
+        Da = ab(1)*coeff(:,n+1:2*n);
+        Db = p*ab(1)*coeff(:,1:n);
+        for k = 2:p
+            Da = Da+k*ab(k)*coeff(:,n*k+1:n*(k+1));
+            Db = Db+(p-k+1)*ab(k)*coeff(:,n*(k-1)+1:n*k);
+        end
+        nabp = norm((a(j).^(0:p)).*(b(j).^(p:-1:0)).*nu');
+        nabpl = norm((al(j).^(0:p)).*(bl(j).^(p:-1:0)).* nu');
+        % condition number for the polynomial:
+        sp(j) = nabp*norm(Y(:,j))*norm(X(:,j))/abs(Y(:,j)'*(conj(b(j))*Da-conj(a(j))*Db)*X(:,j));
+        nab = norm([a(j)*norm(A),b(j)*norm(B)]);
+        % condition number for the Fiedler linearization:
+        % s(j) = nab/abs(Yf(:,j)'*(conj(b(j))*A-conj(a(j))*B)*Xf(:,j));
+        s(j) = nab/abs(Yf(:,j).'*(E(j)*A)*Xf(:,j));
+        resr=coeff(:,1:n);
+        for k=1:p
+            resr=resr+E(j)^k*coeff(:,k*n+1:n*(k+1));
+        end
+        resl=coeff(:,1:n);
+        for k=1:p
+            resl=resl+(El(j))^k*coeff(:,k*n+1:n*(k+1));
+        end
+        resr=resr*X(:,j);
+        resl=resl.'*Y(:,j);
+        rberr(j)=norm(resr)/(nabp*norm(X(:,j)));
+        lberr(j)=norm(resl)/(nabpl*norm(Y(:,j)));
+        % right and left berr of the poly
+        rberrl(j)=norm((E(j)*A-B)*Xf(:,j))/(abs(E(j))*norm(A)+norm(B));
+        % right berr of the linearization
+        lberrl(j)=norm((El(j)*A-B).'*Yf(:,j))/(abs(El(j))*norm(A)+norm(B));
+        % left berr of the linearization
+    end
+    s=s';
+    sp=sp';
+    end
