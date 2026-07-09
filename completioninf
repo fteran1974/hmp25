@@ -1,0 +1,76 @@
+function[evals,infinite,gamma,gammainf,invcond,rvec,lvec,alpha,beta] = completioninf(coeff,k,tau,delta,delta2,delta3,delta4)
+% PEP solved by rank completion in [Hochstenbach-Mehl-Plestenjak,2025]
+% Unlike completion.m, this completioninf.m flags infinite evals
+% coeff=[A0 ... Ap] are the coefficients of the matrix poly P
+% n-k is the rank of P
+% tau is the perturbation constant (default 10e-2)
+% delta is the threshold (default eps^(1/2)
+% evals is the array of eigenvalues
+% invcond is the reciprocal of the condition number
+% rvec,lvec are the corresponding left and right eigenvectors
+% v is a vector of length p-1 which corresponds to the
+% consecution-inversion sequence of the Fiedler linearization which is used
+% to solve the associated GEP
+[n,r]=size(coeff);
+p = r/n-1;
+U=orth(rand(n,k));V=orth(rand(n,k));
+coeff(:,1:n)=coeff(:,1:n)+tau*U*rand(k,k)*V';
+for i=1:p
+    coeff(:,n*i+1:(n*(i+1)))=coeff(:,n*i+1:n*(i+1))+tau*U*rand(k,k)*V';
+end
+% we could also let the code to choose a random v with
+v=int32(randi([0, 1], [1, p-1]));
+[X,Y,E,~,sp,~,~,~,~]=scalfiedlereigconbis(coeff,v);
+%[X,Y,E,~,sp,~,~,~,~]=scalfiedlereigcon(coeff,v);
+alpha=zeros([1,p*n]);
+for i=1:p*n
+    alpha(i)=norm(V'*X(:,i));
+end
+beta=zeros([1,p*n]);
+for i=1:p*n
+    beta(i)=norm(U'*Y(:,i));
+end
+%nu = zeros(p+1,1);
+%for i = 1:p+1, nu(i) = norm(coeff(:,n*(i-1)+1:n*i),'fro'); end
+%s = zeros(n*p,1);  
+% Compute condition numbers as in [Hochstenbach-Mehl-Plestenjak,2025].
+for j = 1:p*n
+    la = (E(j).^(0:p-1));
+    Der = coeff(:,n+1:2*n);
+    for k = 2:p
+        Der = Der+k*la(k)*coeff(:,n*k+1:n*(k+1));
+    end
+    nabp = norm((E(j).^(0:p)));%norm((E(j).^(0:p)).*nu');
+    % condition number for the polynomial:
+    sp(j) = nabp*norm(Y(:,j))*norm(X(:,j))/abs(Y(:,j)'*Der*X(:,j));
+    %nab = norm([a(j)*norm(A),b(j)*norm(B)]);
+end
+gamma=1./sp;
+% Compute the gap as in [HMP25]
+for i=1:n*p
+    dist=abs(E-E(i));
+    dist=dist(dist>0);
+    gap(i)=min(dist)/sqrt(1+abs(E(i))^2);
+end
+ind2=[];
+for i=1:n*p
+    if gamma(i)<delta2
+        ind2=[ind2,i];
+    elseif gamma(i)<delta3 && gap(i)>delta4
+        ind2=[ind2,i];
+    end
+end
+in=isnan(gamma);
+[~,in]=find(in==1);
+ind2=union(ind2,in);
+infinite=E(ind2);
+gammainf=gamma(ind2);
+[~,ind3]=find(max(alpha,beta)>delta);
+ind4=union(ind2,ind3);
+ind=setdiff(1:p*n,ind4);
+evals=E(ind);
+invcond=1./sp(ind);
+rvec=X(:,ind);
+lvec=Y(:,ind);
+alpha=alpha(ind);
+beta=beta(ind);
