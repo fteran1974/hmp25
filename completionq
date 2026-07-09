@@ -1,0 +1,70 @@
+function [evals,infinite,invcond,gamma,gammainf,rvec,lvec,alpha,beta] = completionq(coeff,k,tau,delta,delta2,delta3,delta4)
+% QEP solved by rank completion in [Hochstenbach-Mehl-Plestenjak,2025]
+% coeff=[A0 ... Ap] are the coefficients of the matrix poly P
+% n-k is the rank of P
+% tau is the perturbation constant (default 10e-2)
+% delta is the threshold (default eps^(1/2)
+% evals is the array of eigenvalues
+% invcond is the reciprocal of the condition number computed with quadeig
+% invcondbis is the reciprocal of the condition number computed as in
+% [HMP25]
+% rvec,lvec are the corresponding left and right eigenvectors
+[n,~]=size(coeff);
+U=orth(rand(n,k));
+V=orth(rand(n,k));
+coeff(:,1:n)=coeff(:,1:n)+tau*U*rand(k,k)*V'; %perturbs the trailing
+%coefficient of P
+%coeff(:,n*p+1:n*(p+1))=coeff(:,n*p+1:n*(p+1))+tau*U*rand(k,k)*V'; %perturbs the leading
+%coefficient of P
+for i=1:2
+coeff(:,n*i+1:(n*(i+1)))=coeff(:,n*i+1:n*(i+1))+tau*U*rand(k,k)*V';
+end
+[X,E,Y,sp]=quadeig(coeff(:,2*n+1:3*n),coeff(:,n+1:2*n),coeff(:,1:n));
+alpha=zeros([1,2*n]);
+for i=1:2*n
+    alpha(i)=norm(V'*X(:,i));
+end
+beta=zeros([1,2*n]);
+for i=1:2*n
+    beta(i)=norm(U'*Y(:,i));
+end
+
+% Compute condition numbers as in [Hochstenbach-Mehl-Plestenjak,2025].
+for j = 1:2*n
+    la = (E(j).^(0:1));
+    Der = coeff(:,n+1:2*n);
+    for k = 2
+        Der = Der+k*la(k)*coeff(:,n*k+1:n*(k+1));
+    end
+    nabp = norm((E(j).^(0:2)));%norm((E(j).^(0:p)).*nu');
+    spb(j) = nabp*norm(Y(:,j))*norm(X(:,j))/abs(Y(:,j)'*Der*X(:,j));
+end
+gamma=1./spb;
+% Compute the gap as in [HMP25]
+for i=1:(n-k)*2
+    dist=abs(E-E(i));
+    dist=dist(dist>0);
+    gap(i)=min(dist)/sqrt(1+abs(E(i))^2);
+end
+ind2=[];
+for i=1:(n-k)*2
+if gamma(i)<delta2
+    ind2=[ind2,i];
+elseif gamma(i)<delta3 && gap(i)>delta4
+    ind2=[ind2,i];
+end
+end
+in=isnan(gamma);
+[~,in]=find(in==1);
+ind2=union(ind2,in);
+infinite=E(ind2);
+gammainf=gamma(ind2);
+[~,ind3]=find(max(alpha,beta)>delta);
+ind4=union(ind2,ind3);
+ind=setdiff(1:2*(n-k),ind4);
+evals=E(ind);
+invcond=1./sp(ind);
+rvec=X(:,ind);
+lvec=Y(:,ind);
+alpha=alpha(ind);
+beta=beta(ind);
