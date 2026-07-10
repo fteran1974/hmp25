@@ -12,10 +12,10 @@ function[evals,invcond,rvec,lvec,alpha,beta] = completion(coeff,k,tau,delta)
 % to solve the associated GEP
 [n,r]=size(coeff);
 p = r/n-1;
-U=orth(rand(n,k));V=orth(rand(n,k));
-coeff(:,1:n)=coeff(:,1:n)+tau*U*rand(k,k)*V';
+U=orth(randn(n,k));V=orth(randn(n,k));
+coeff(:,1:n)=coeff(:,1:n)+tau*U*randn(k,k)*V';
 for i=1:p
-coeff(:,n*i+1:(n*(i+1)))=coeff(:,n*i+1:n*(i+1))+tau*U*rand(k,k)*V';
+coeff(:,n*i+1:(n*(i+1)))=coeff(:,n*i+1:n*(i+1))+tau*U*randn(k,k)*V';
 end
 % we could also let the code to choose a random v with
 v=int32(randi([0, 1], [1, p-1]));
