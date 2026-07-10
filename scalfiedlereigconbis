@@ -8,7 +8,7 @@ function[X,Y,E,s,sp,rberr,lberr,rberrl,lberrl]=scalfiedlereigconbis(coeff,v)
 %  However, in the case of multiple e-vals, left and right e-vecs may not
 %  match!!
 %   a=[A0 A1 ... Ap] is a matrix with size nxn(p+1)
-%   [X,E] = fiedlereig((v1,...,v_{p-1}),A0,A1,..,Ap) solves 
+%   [X,E] = scalfiedlereigconbis((v1,...,v_{p-1}),A0,A1,..,Ap) solves 
 %   the polynomial eigenvalue problem of degree p:
 %      (A0 + lambda*A1 + ... + lambda^p*Ap)*x = 0.
 %   using the Fiedler pencil whose CISS is given by v
@@ -25,7 +25,7 @@ function[X,Y,E,s,sp,rberr,lberr,rberrl,lberrl]=scalfiedlereigconbis(coeff,v)
 %         (A0 + lambda*A1 + ... + lambda^p*Ap)*x is approximately 0.
 %      end
 %
-%   E = fiedlereig(A0,A1,..,Ap,v) is a vector of length n*p whose
+%   E = scalfiedlereigconbis(A0,A1,..,Ap,v) is a vector of length n*p whose
 %   elements are the eigenvalues of the polynomial eigenvalue problem.
 %
 %   If both A0 and Ap are singular the problem is potentially ill-posed.
@@ -34,7 +34,7 @@ function[X,Y,E,s,sp,rberr,lberr,rberrl,lberrl]=scalfiedlereigconbis(coeff,v)
 %   If one, but not both, of A0 and Ap is singular, the problem is well
 %   posed, but some of the eigenvalues may be zero or "infinite".
 %
-%   [X,E,S] = fiedlereig(A0,A1,..,AP) also returns a P*N length vector S of
+%   [X,E,S] = scalfiedlereigconbis(A0,A1,..,AP) also returns a P*N length vector S of
 %   condition numbers for the eigenvalues. At least one of A0 and AP must 
 %   be nonsingular. Large condition numbers imply that the problem is
 %   near one with multiple eigenvalues.
