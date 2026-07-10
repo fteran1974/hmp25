@@ -12,8 +12,8 @@ function[evals,infinite,invcond,gamma,gammainf,rvec,lvec,alpha,beta] = augmentat
 % rvec,lvec are the corresponding left and right eigenvectors
 % the regular QEP is solved with quadeig
 [n,~]=size(coeff);
-U=orth(rand(n,k));V=orth(rand(n,k));
-Q1=rand(k,3*k);Q2=rand(k,3*k);
+U=orth(randn(n,k));V=orth(randn(n,k));
+Q1=randn(k,3*k);Q2=randn(k,3*k);
 pa=zeros((n+k),3*(n+k));
 for i=1:3
     pa(:,(n+k)*(i-1)+1:(n+k)*i)=[coeff(:,n*(i-1)+1:n*i),U*Q1(:,k*(i-1)+1:k*i);Q2(:,k*(i-1)+1:k*i)*V',zeros(k)];
