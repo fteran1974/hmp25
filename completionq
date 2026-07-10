@@ -41,13 +41,13 @@ for j = 1:2*n
 end
 gamma=1./spb;
 % Compute the gap as in [HMP25]
-for i=1:(n-k)*2
+for i=1:n*2
     dist=abs(E-E(i));
     dist=dist(dist>0);
     gap(i)=min(dist)/sqrt(1+abs(E(i))^2);
 end
 ind2=[];
-for i=1:(n-k)*2
+for i=1:n*2
 if gamma(i)<delta2
     ind2=[ind2,i];
 elseif gamma(i)<delta3 && gap(i)>delta4
