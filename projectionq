@@ -12,8 +12,8 @@ function [evals,infinite,invcond,gamma,gammainf,rvec,lvec,alpha,beta] = projecti
 % delta2 is the tolerance on gamma to detect infinite evals
 % delta3 and delta4 is the tolerance on the gap to detect infinite evals
 [n,~]=size(coeff);
-U=orth(rand(n,n));
-V=orth(rand(n,n));
+U=orth(randn(n));
+V=orth(randn(n));
 U1=U(:,1:n-k);V1=V(:,1:n-k);
 U2=U(:,n-k+1:end);V2=V(:,n-k+1:end);
 % Construct the projection matrix poly
