@@ -11,8 +11,8 @@ function[evals,invcond,rvec,lvec,alpha,beta] = augmentation(coeff,k,delta)
 % to solve the associated GEP
 [n,r]=size(coeff);
 p = r/n-1; % degree of P
-U=orth(rand(n,k));V=orth(rand(n,k));
-Q1=rand(k,k*(p+1));Q2=rand(k,k*(p+1));
+U=orth(randn(n,k));V=orth(randn(n,k));
+Q1=randn(k,k*(p+1));Q2=randn(k,k*(p+1));
 pa=zeros((n+k),(p+1)*(n+k));
 for i=1:p+1
     pa(:,(n+k)*(i-1)+1:(n+k)*i)=[coeff(:,n*(i-1)+1:n*i),U*Q1(:,k*(i-1)+1:k*i);Q2(:,k*(i-1)+1:k*i)*V',zeros(k)];
