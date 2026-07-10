@@ -13,8 +13,8 @@ function[evals,infinite,gamma,gammainf,alpha,beta] = projection(coeff,k,delta,de
 % to solve the associated GEP
 [n,r]=size(coeff);
 p = r/n-1;
-U=orth(rand(n,n));
-V=orth(rand(n,n));
+U=orth(randn(n));
+V=orth(randn(n));
 U1=U(:,1:n-k);V1=V(:,1:n-k);
 U2=U(:,n-k+1:end);V2=V(:,n-k+1:end);
 % Construct the projection matrix poly
