@@ -10,14 +10,14 @@ function [evals,infinite,invcond,gamma,gammainf,rvec,lvec,alpha,beta] = completi
 % [HMP25]
 % rvec,lvec are the corresponding left and right eigenvectors
 [n,~]=size(coeff);
-U=orth(rand(n,k));
-V=orth(rand(n,k));
-coeff(:,1:n)=coeff(:,1:n)+tau*U*rand(k,k)*V'; %perturbs the trailing
+U=orth(randn(n,k));
+V=orth(randn(n,k));
+coeff(:,1:n)=coeff(:,1:n)+tau*U*randn(k,k)*V'; %perturbs the trailing
 %coefficient of P
-%coeff(:,n*p+1:n*(p+1))=coeff(:,n*p+1:n*(p+1))+tau*U*rand(k,k)*V'; %perturbs the leading
+%coeff(:,n*p+1:n*(p+1))=coeff(:,n*p+1:n*(p+1))+tau*U*randn(k,k)*V'; %perturbs the leading
 %coefficient of P
 for i=1:2
-coeff(:,n*i+1:(n*(i+1)))=coeff(:,n*i+1:n*(i+1))+tau*U*rand(k,k)*V';
+coeff(:,n*i+1:(n*(i+1)))=coeff(:,n*i+1:n*(i+1))+tau*U*randn(k,k)*V';
 end
 [X,E,Y,sp]=quadeig(coeff(:,2*n+1:3*n),coeff(:,n+1:2*n),coeff(:,1:n));
 alpha=zeros([1,2*n]);
